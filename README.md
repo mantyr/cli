@@ -22,7 +22,7 @@ import (
 
 	"github.com/mantyr/cli"
 
-	"commands"
+	"command"
 )
 
 func main() {
