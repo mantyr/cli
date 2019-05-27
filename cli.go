@@ -21,7 +21,6 @@ type Command interface {
 
 type CLI struct {
 	name     string
-	args     []string
 	err      error
 	commands map[string]Command
 	list     []Command
@@ -29,13 +28,23 @@ type CLI struct {
 
 func New(
 	programName string,
-	args []string,
 ) *CLI {
 	return &CLI{
 		name:     programName,
-		args:     args,
 		commands: make(map[string]Command),
 	}
+}
+
+func (c *CLI) Name() string {
+	return c.name
+}
+
+func (c *CLI) Group(name string) *CLI {
+	group := New(
+		name,
+	)
+	c.Add(group)
+	return group
 }
 
 func (c *CLI) Add(commands ...Command) {
@@ -61,24 +70,24 @@ func (c *CLI) Add(commands ...Command) {
 	}
 }
 
-func (c *CLI) Run() error {
+func (c *CLI) Run(args []string) error {
 	if c.err != nil {
 		c.PrintDefaults()
 		return c.err
 	}
-	if len(c.args) == 0 {
+	if len(args) == 0 {
 		c.PrintDefaults()
 		return errors.New("empty args")
 	}
-	name := strings.TrimSpace(c.args[0])
+	name := strings.TrimSpace(args[0])
 	switch name {
 	case "help", "-help", "--help":
 		c.PrintDefaults()
 		return nil
 	}
-	command, ok := c.commands[c.args[0]]
+	command, ok := c.commands[args[0]]
 	if ok {
-		return command.Run(c.args[1:])
+		return command.Run(args[1:])
 	}
 	c.PrintDefaults()
 	return fmt.Errorf("unexpected command %s", name)
@@ -93,6 +102,22 @@ func (c *CLI) PrintDefault(command Command) {
 	command.PrintDefaults()
 	fmt.Printf("\n")
 }
+
+/*
+SYNOPSIS
+  merchants sync
+  merchants exists
+  merchants add
+  merchants edit
+
+USAGE
+  merchants sync
+
+OPTIONS
+  -config string
+    Адрес конфигурационного файла для merchants sync (default "./merchants.conf")
+
+*/
 
 func (c *CLI) PrintDefaults() {
 	fmt.Printf("SYNOPSIS\n")
